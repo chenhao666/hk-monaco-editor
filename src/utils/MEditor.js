@@ -4,7 +4,7 @@
  * @Autor: Chen
  * @Date: 2021-12-13 14:14:46
  * @LastEditors: Chen
- * @LastEditTime: 2021-12-17 13:20:54
+ * @LastEditTime: 2021-12-20 14:52:59
  */
 import { editor, languages } from 'monaco-editor/esm/vs/editor/edcore.main.js';
 import 'monaco-editor/esm/vs/basic-languages/mysql/mysql.contribution';
@@ -47,6 +47,8 @@ export default class Editor {
         // this.fileCounter = 0;
         //当前编辑器
         this.editorObj = {};
+        //当前编辑器类型 默认type:1 常规编辑器  2.diff编辑器
+        this.type=1;
         //语法关键字map
         this.keywordsMap = {
             'sql': sqlMap.keywords
@@ -82,6 +84,17 @@ export default class Editor {
         // this.listenEditor();
     }
 
+    createDiffEditor(container_id,oldCode,newCode,language = 'sql'){
+        this.type=2;
+        let newEditor = editor.createDiffEditor(document.getElementById(container_id), {
+            theme: 'vs'
+        });
+        newEditor.setModel({
+            original:editor.createModel(oldCode, language),
+            modified:editor.createModel(newCode, language)
+        })
+        this.editorObj = newEditor;
+    }
     // addNewEditor(code, language='sql') {
     //     let new_container = document.createElement("DIV");
     //     new_container.id = "container-" + this.fileCounter.toString(10);
@@ -145,14 +158,22 @@ export default class Editor {
         this.editorObj.updateOptions(options);
     }
 
+    updateOriginalOptions(options){
+        this.editorObj.getOriginalEditor().updateOptions(options);
+    }
+
+    updateModifiedOptions(options){
+        this.editorObj.getModifiedEditor().updateOptions(options);
+    }
+
     readOnly() {
-        this.editorObj.updateOptions({
+        this.updateOptions({
             readOnly: true
         });
     }
 
     closeMineMap(){
-        this.editorObj.updateOptions({
+        this.updateOptions({
             minimap: {
                 enabled:false
             }
@@ -160,23 +181,35 @@ export default class Editor {
     }
 
     mouseWheelZoom(){
-        this.editorObj.updateOptions({
+        this.updateOptions({
             mouseWheelZoom:true
         });
     }
 
     dragAndDrop(){
-        this.editorObj.updateOptions({
+        this.updateOptions({
             dragAndDrop:true
         });
     }
     
     getValue() {
-        return this.editorObj.getValue();
+        const { type,editorObj } =this;
+        return type==2 ? [ 
+            editorObj.getOriginalEditor().getValue(),
+            editorObj.getModifiedEditor().getValue() 
+        ]
+        :editorObj.getValue()
     }
 
     setValue(value) {
-        this.editorObj.setValue(value);
+        const { type,editorObj } =this;
+        type==1? 
+        editorObj.setValue(value)
+        :editorObj.getModifiedEditor().setValue(value)
+    }
+
+    setOriginalValue(value){
+        this.editorObj.getOriginalEditor().setValue(value);
     }
 
     destroyEditor() {
@@ -184,11 +217,13 @@ export default class Editor {
     }
     
     listenEditor(callback) {
-        this.editorObj.onDidChangeModelContent(() => {
-            // console.log('内容改变', this.getValue());
-            // const currentText = this.editor.getValue();
-            // let str = currentText.substr(0, this.caretOffset + 1);
+        const { type,editorObj } =this;
+        type==1?
+        editorObj.onDidChangeModelContent(() => {
             callback(this.getValue())
-        });
+        })
+        :editorObj.getModifiedEditor().onDidChangeModelContent(() => {
+            callback(this.getValue())
+        })
     }
 }

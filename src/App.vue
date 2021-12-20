@@ -4,11 +4,11 @@
  * @Autor: Chen
  * @Date: 2021-12-17 11:09:44
  * @LastEditors: Chen
- * @LastEditTime: 2021-12-17 15:11:02
+ * @LastEditTime: 2021-12-20 14:42:17
 -->
 <template>
   <div id="app">
-    <hk-monaco-editor :completList="completList" ref="monaco" @change="changeContent"></hk-monaco-editor>
+    <hk-monaco-editor :oldCode="oldCode" :defaultCode="defaultCode" :completList="completList" ref="monaco" @change="changeContent"></hk-monaco-editor>
     <button @click="getData">获取数据</button>
   </div>
 </template>
@@ -19,7 +19,9 @@ export default {
   name: 'app',
   data () {
     return {
-      completList:['table1','table2','table3','table4','table5']
+      completList:['table1','table2','table3','table4','table5'],
+      oldCode:'select * from admin',
+      defaultCode:'select * from user'
     }
   },
   components:{
@@ -31,6 +33,7 @@ export default {
   methods:{
     getData(){
       console.log(this.$refs.monaco.getValue());
+      this.$refs.monaco.formatSql();
     },
     changeContent(val){
       console.log(val)
