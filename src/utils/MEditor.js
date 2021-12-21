@@ -4,7 +4,7 @@
  * @Autor: Chen
  * @Date: 2021-12-13 14:14:46
  * @LastEditors: Chen
- * @LastEditTime: 2021-12-20 14:52:59
+ * @LastEditTime: 2021-12-21 11:33:20
  */
 import { editor, languages } from 'monaco-editor/esm/vs/editor/edcore.main.js';
 import 'monaco-editor/esm/vs/basic-languages/mysql/mysql.contribution';
@@ -51,9 +51,9 @@ export default class Editor {
         this.type=1;
         //语法关键字map
         this.keywordsMap = {
-            'sql': sqlMap.keywords
+            'sql':sqlMap
         }
-
+        
         //默认显示代码
         this.defaultCode = [
             'SELECT * FROM Table'
@@ -67,6 +67,25 @@ export default class Editor {
             colors: { 'editor.lineHighlightBackground': '#0000FF20' }
         });
         this.setTheme();
+    }
+
+    getKeyWords(language){
+        const{ keywords,operators,builtinFunctions,builtinVariables  } = language;
+        let arr = new Set([...keywords,...operators,...builtinFunctions,...builtinVariables]);
+        let newArr=[];
+        for(let v of arr) {
+            let kind='Keyword';
+            if(operators.includes(v)) kind='Operator';
+            if(builtinFunctions.includes(v)) kind='Function';
+            if(builtinVariables.includes(v)) kind='Variable';
+            newArr.push({
+                label: v, // 显示的提示内容
+                kind: languages.CompletionItemKind[kind], // 用来显示提示内容后的不同的图标
+                insertText: v, // 选择后粘贴到编辑器中的文字
+                detail: kind, // 提示内容后的说明
+            })
+        }
+        return newArr;
     }
 
     setTheme(themeName='defaultTheme', options) {
@@ -105,21 +124,20 @@ export default class Editor {
     // }
 
     openCompletTip(addSuggestions, language = 'sql') {
-        //获取默认关键字
-        let keyWords = this.keywordsMap[language];
         languages.registerCompletionItemProvider(language, { 
-            provideCompletionItems(model, position, context) {
+            provideCompletionItems:(model, position, context)=>{
+                let keyWords =this.getKeyWords(this.keywordsMap[language]);
                 //判断传入参数是否是数组
                 if (addSuggestions.constructor === Array) {
                     return {
-                        suggestions: keyWords.concat(addSuggestions).map(v => {
+                        suggestions:keyWords.concat(addSuggestions.map(v => {
                             return {
                                 label: v, // 显示的提示内容
-                                kind: languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
+                                kind: languages.CompletionItemKind['Value'], // 用来显示提示内容后的不同的图标
                                 insertText: v, // 选择后粘贴到编辑器中的文字
-                                detail: '关键字', // 提示内容后的说明
+                                detail: 'Value', // 提示内容后的说明
                             }
-                        }),
+                        })),
                         incomplete: true
                     };
                 }
@@ -129,7 +147,7 @@ export default class Editor {
                         suggestions: addSuggestions[context.triggerCharacter].values.map(v => {
                             return {
                                 label: v, // 显示的提示内容
-                                kind: languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
+                                kind: languages.CompletionItemKind['Value'], // 用来显示提示内容后的不同的图标
                                 insertText: v, // 选择后粘贴到编辑器中的文字
                                 detail: addSuggestions[context.triggerCharacter].key, // 提示内容后的说明
                             }
@@ -138,19 +156,12 @@ export default class Editor {
                     };
                 } else {
                     return {
-                        suggestions: keyWords.map(v => {
-                            return {
-                                label: v, // 显示的提示内容
-                                kind: languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
-                                insertText: v, // 选择后粘贴到编辑器中的文字
-                                detail: '关键字', // 提示内容后的说明
-                            }
-                        }),
+                        suggestions: keyWords,
                         incomplete: true
                     };
                 }
             },
-            triggerCharacters: Object.keys(addSuggestions).concat(' ') // 触发提示的字符，可以写多个
+            triggerCharacters: addSuggestions.constructor===Object?Object.keys(addSuggestions).concat(' '):[' '] // 触发提示的字符，可以写多个
         });
     }
 
