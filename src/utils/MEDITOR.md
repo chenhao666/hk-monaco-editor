@@ -1,11 +1,28 @@
 <!--
- * @Description: 这是一个描述
+ * @Description: monaco editor使用方法
  * @Version: 2.0
  * @Autor: Chen
  * @Date: 2021-12-16 10:41:56
  * @LastEditors: Chen
- * @LastEditTime: 2021-12-17 16:50:31
+ * @LastEditTime: 2022-01-20 16:15:20
 -->
+# 修改配置
+npm install monaco-editor-webpack-plugin @babel/plugin-proposal-optional-chaining --save 
+
+plugins : ['@babel/plugin-proposal-optional-chaining'] --babel.config文件
+
+---vue.config.js文件
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+
+configureWebpack: config => {
+    config.plugins.push(new MonacoWebpackPlugin())
+}
+
+transpileDependencies: [
+    /[/\\]node_modules[/\\](.+?)?monaco-editor(.*)[/\\]esm(.*)[/\\]vs(.*)[/\\]language/,
+    /[/\\]node_modules[/\\](.+?)?monaco-editor(.*)[/\\]esm(.*)[/\\]vs(.*)[/\\]basic-languages/
+]
+
 # 使用库
 npm install monaco-editor --save 
 monaco-editor/esm/vs/editor/editor.api.js 基础API库
